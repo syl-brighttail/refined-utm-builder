@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UTM Tracking Tool (Synced)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2, h3 { margin-top: 40px; }
+    label { display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 8px; margin-top: 5px; }
+    button { margin-top: 15px; padding: 10px 15px; cursor: pointer; }
+    .utm-log { margin-top: 30px; width: 100%; border-collapse: collapse; }
+    .utm-log th, .utm-log td { border: 1px solid #ccc; padding: 8px; }
+    .utm-log th { background: #eee; }
+    .flex-container { display: flex; flex-wrap: wrap; gap: 20px; }
+    .form-section { flex: 1 1 45%; border: 1px solid #ccc; padding: 20px; }
+    .status { margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>UTM Tracking Tool (Synced with Google Sheets)</h1>
+
+  <div class="form-section">
+    <h2>Generate UTM URL</h2>
+    <label>Created By
+      <select id="created-by">
+        <option value="Refined">Refined</option>
+        <option value="Brighttail">Brighttail</option>
+      </select>
+    </label>
+    <label>Base URL<input id="base-url" type="text" placeholder="https://example.com/page" /></label>
+    <label>Channel<select id="channel">
+      <option>Website Outlinks</option>
+      <option>Paid Search (SEM)</option>
+      <option>Performance Max</option>
+      <option>Demand Generation</option>
+      <option>Paid Video Campaigns</option>
+      <option>Organic Video</option>
+      <option>Organic Social</option>
+      <option>Paid Social</option>
+      <option>Email Marketing</option>
+      <option>Content Marketing</option>
+      <option>Events & Webinars</option>
+      <option>Partner Marketing</option>
+      <option>Display Advertising</option>
+      <option>Affiliate</option>
+    </select></label>
+    <label>utm_source<input id="utm-source" type="text" /></label>
+    <label>utm_medium<input id="utm-medium" type="text" /></label>
+    <label>utm_campaign<input id="utm-campaign" type="text" placeholder="e.g. sem-[app]-[objective]-[YYYYMM]" /></label>
+    <label>utm_content<input id="utm-content" type="text" placeholder="e.g. image_top_cta-v1" /></label>
+    <label>utm_term<input id="utm-term" type="text" placeholder="(optional keyword or audience)" /></label>
+    <button onclick="generateUTM()">Generate & Sync</button>
+    <p id="generated-url"></p>
+    <p class="status" id="status"></p>
+  </div>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyCHsRvV694rPypYd0a-chfisfQYj10-T3ml05s-tUAd3kt85-x5YRUfBkdED1exB0/exec";
+
+    function generateUTM() {
+      const createdBy = document.getElementById("created-by").value;
+      const base = document.getElementById("base-url").value;
+      const source = document.getElementById("utm-source").value.trim();
+      const medium = document.getElementById("utm-medium").value.trim();
+      const campaign = document.getElementById("utm-campaign").value.trim();
+      const content = document.getElementById("utm-content").value.trim();
+      const term = document.getElementById("utm-term").value.trim();
+      const channel = document.getElementById("channel").value;
+
+      const url = `${base}?utm_source=${source}&utm_medium=${medium}&utm_campaign=${campaign}&utm_content=${content}${term ? `&utm_term=${term}` : ''}`;
+
+      const ga4 = categorizeGA4(medium);
+      const hubspot = categorizeHubSpot(medium);
+
+      document.getElementById("generated-url").innerText = url;
+
+      const data = {
+        createdBy,
+        channel,
+        url,
+        source,
+        medium,
+        campaign,
+        content,
+        term,
+        ga4,
+        hubspot
+      };
+
+      fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          document.getElementById("status").innerText = "✅ Synced to Google Sheets!";
+        } else {
+          document.getElementById("status").innerText = "⚠️ Failed to sync.";
+        }
+      })
+      .catch(() => {
+        document.getElementById("status").innerText = "⚠️ Error syncing. Check internet connection.";
+      });
+    }
+
+    function categorizeGA4(medium) {
+      const map = {
+        cpc: 'Paid Search',
+        'cross-network': 'Cross-network',
+        display: 'Display',
+        video: 'Paid Video',
+        email: 'Email',
+        social: 'Organic Social',
+        paid_social: 'Paid Social',
+        referral: 'Referral',
+        content: 'Content Marketing',
+        event: 'Events and Webinars',
+        partner: 'Partner Marketing',
+        affiliate: 'Affiliates'
+      };
+      return map[medium] || 'Other';
+    }
+
+    function categorizeHubSpot(medium) {
+      const map = {
+        cpc: 'Paid Search',
+        email: 'Email Marketing',
+        referral: 'Referral',
+        social: 'Organic Social',
+        paid_social: 'Paid Social',
+        video: 'Other Campaigns',
+        content: 'Other Campaigns',
+        event: 'Other Campaigns',
+        partner: 'Other Campaigns',
+        affiliate: 'Other Campaigns'
+      };
+      return map[medium] || 'Other Campaigns';
+    }
+  </script>
+</body>
+</html>

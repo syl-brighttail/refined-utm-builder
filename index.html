@@ -46,6 +46,9 @@
       <option>Display Advertising</option>
       <option>Affiliate</option>
     </select></label>
+    <label>ATL Marketing Attribution Category
+      <input id="utm-atl-category" type="text" placeholder="e.g. paid-search-non-branded" />
+    </label>
     <label>utm_source<input id="utm-source" type="text" /></label>
     <label>utm_medium<input id="utm-medium" type="text" /></label>
     <label>utm_campaign<input id="utm-campaign" type="text" placeholder="e.g. sem-[app]-[objective]-[YYYYMM]" /></label>
@@ -68,6 +71,7 @@
       const content = document.getElementById("utm-content").value.trim();
       const term = document.getElementById("utm-term").value.trim();
       const channel = document.getElementById("channel").value;
+      const atlmarketingattribution = document.getElementById("utm-atl-category").value.trim();
 
       const url = `${base}?utm_source=${source}&utm_medium=${medium}&utm_campaign=${campaign}&utm_content=${content}${term ? `&utm_term=${term}` : ''}`;
 
@@ -86,7 +90,8 @@
         content,
         term,
         ga4,
-        hubspot
+        hubspot,
+        atlmarketingattribution
       };
 
       fetch(scriptURL, {

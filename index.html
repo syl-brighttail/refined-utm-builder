@@ -1,216 +1,320 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>UTM Builder</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refined Unified UTM Builder</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background-color: #fff;
-      color: #000;
-    }
-    body.dark-mode {
-      background-color: #1e1e1e;
-      color: #f0f0f0;
-      border-color: #444;
-    }
-    label {
-      display: block;
-      margin-top: 12px;
-      font-weight: bold;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      box-sizing: border-box;
-      background-color: inherit;
-      color: inherit;
-      border: 1px solid #ccc;
-    }
-    input[readonly], textarea[readonly] {
-      background-color: #f5f5f5;
-    }
-    .dark-mode input[readonly], .dark-mode textarea[readonly] {
-      background-color: #333;
-    }
-    #guideBox {
-      font-family: monospace;
-      font-size: 0.9em;
-      height: 80px;
-    }
-    #generatedUtm {
-      font-family: monospace;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #4CAF50;
-      color: white;
-      font-size: 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .copy-btn {
-      margin-top: 10px;
-      background-color: #2196F3;
-    }
-    .toggle-dark-mode {
-      float: right;
-      font-size: 14px;
-      cursor: pointer;
-      color: #888;
-    }
+    :root { --bg: #fff; --text: #000; --border: #ddd; --primary: #4CAF50; --accent: #2196F3; --radius: 8px; --gap: 12px; }
+    body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); max-width: 800px; margin: 40px auto; padding: var(--gap); border: 1px solid var(--border); border-radius: var(--radius); position: relative; }
+    body.dark-mode { --bg: #1e1e1e; --text: #f0f0f0; --border: #444; }
+    .toggle-dark-mode { position: absolute; top: 16px; right: 16px; cursor: pointer; font-size: 18px; color: #888; }
+    form { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    @media (max-width: 600px) { form { grid-template-columns: 1fr; } }
+    label { display: flex; flex-direction: column; }
+    label.full { grid-column: span 2; }
+    input, select, textarea, button { padding: 8px; border: 1px solid #ccc; border-radius: var(--radius); font-size: 1em; background: inherit; color: inherit; }
+    input[readonly], textarea[readonly] { background: #f5f5f5; }
+    body.dark-mode input[readonly], body.dark-mode textarea[readonly] { background: #333; }
+    .buttons { display: flex; gap: var(--gap); grid-column: span 2; }
+    .buttons button { flex: 1; color: #fff; border: none; cursor: pointer; }
+    .copy-btn { background: var(--accent); }
+    .reset-btn { background: #ff9800; }
+    .submit-btn { background: var(--primary); }
+    .toast { position: fixed; bottom: 16px; right: 16px; background: var(--primary); color: #fff; padding: var(--gap); border-radius: var(--radius); opacity: 0; transition: opacity 0.3s; }
+    #generatedUtm { font-family: monospace; height: 60px; }
+    small.guide { font-size: 0.85em; color: #666; margin-top: 4px; display: block; }
   </style>
 </head>
 <body>
-  <span class="toggle-dark-mode" onclick="toggleDarkMode()">🌓 Toggle Dark Mode</span>
-  <h2>UTM Builder Tool</h2>
+  <span class="toggle-dark-mode" onclick="toggleDarkMode()">🌓</span>
+  <h2 class="full">UTM Builder Tool</h2>
   <form id="utmForm">
     <label>Created By:
-      <select id="createdBy" required>
+      <select id="createdBy">
         <option value="">--Select--</option>
         <option value="Refined">Refined</option>
         <option value="Brighttail">Brighttail</option>
       </select>
     </label>
+
     <label>Channel Type:
-      <select id="channelType" required onchange="updateFields()">
+      <select id="channelType">
         <option value="">--Select--</option>
+        <optgroup label="Organic Channels">
+          <option>Organic Video</option>
+          <option>Organic Social</option>
+        </optgroup>
+        <optgroup label="Other Channels">
+          <option>Email Marketing</option>
+          <option>Content Marketing</option>
+          <option>Events & Webinars</option>
+          <option>Partner Marketing</option>
+          <option>Direct Traffic</option>
+          <option>Website Outlinks</option>
+        </optgroup>
+        <optgroup label="Paid Channels">
+          <option>Paid Search (SEM)</option>
+          <option>Performance Max</option>
+          <option>Demand Generation</option>
+          <option>Paid Video Campaigns</option>
+          <option>Paid Social</option>
+          <option>Display Advertising</option>
+          <option>Affiliate</option>
+        </optgroup>
       </select>
     </label>
-    <label>HubSpot Category:<input type="text" id="hubspotCategory" readonly></label>
-    <label>GA4 Category:<input type="text" id="ga4Category" readonly></label>
-    <label>ATL Marketing Attribution Category:<input type="text" id="atlCategory" readonly></label>
-    <label>utm_source:<input type="text" id="utmSource" required></label>
-    <label>utm_medium:<input type="text" id="utmMedium" readonly></label>
-    <label>utm_campaign:<input type="text" id="utmCampaign" required></label>
-    <label>utm_content:<input type="text" id="utmContent"></label>
-    <label>utm_term:<input type="text" id="utmTerm"></label>
-    <label>Final URL:<input type="text" id="finalUrl" required></label>
-    <label>Generated UTM:<textarea id="generatedUtm" rows="3" readonly></textarea></label>
-    <button type="button" class="copy-btn" onclick="copyUTM()">📋 Copy UTM</button>
-    <label>Naming Convention Guide:</label>
-    <textarea id="guideBox" readonly></textarea>
-    <button type="submit">Generate & Log</button>
+
+    <label>HubSpot Category:
+      <input type="text" id="hubspotCategory" readonly>
+    </label>
+    <label>GA4 Category:
+      <input type="text" id="ga4Category" readonly>
+    </label>
+
+    <label class="full">ATL Marketing Attribution Category:
+      <input type="text" id="atlCategory" readonly>
+    </label>
+
+    <label>utm_source:
+      <input type="text" id="utmSource" placeholder="refined.com" oninput="updateUtm()">
+    </label>
+
+    <label>utm_medium:
+      <input type="text" id="utmMedium" readonly>
+    </label>
+
+    <label>utm_campaign:
+      <input type="text" id="utmCampaign" oninput="updateUtm()" placeholder="">
+      <small class="guide" id="campaignGuide"></small>
+    </label>
+
+    <label>utm_content:
+      <input type="text" id="utmContent" oninput="updateUtm()" placeholder="">
+      <small class="guide" id="contentGuide"></small>
+    </label>
+
+    <label>utm_term:
+        <input type="text" id="utmTerm" oninput="updateUtm()" placeholder="Optional">
+      </label>
+
+    <label>Select Final URL:
+        <select id="urlSelect" onchange="chooseUrl()">
+          <option value="">--Select URL--</option>
+          <option value="https://marketplace.atlassian.com/apps/1221322/refined-sites-for-confluence-intranets-documentation-kbs?hosting=cloud&tab=overview">Confluence Cloud</option>
+          <option value="https://marketplace.atlassian.com/apps/1218481/refined-sites-for-jsm-theme-itsm-hr-help-service-desks?hosting=cloud&tab=overview">JSM Cloud</option>
+          <option value="https://marketplace.atlassian.com/apps/1211136/refined-toolkit-for-confluence-dc?hosting=cloud&tab=overview">Toolkit Cloud</option>
+          <option value="https://marketplace.atlassian.com/apps/15231/refined-for-confluence-dc-intranet-themes-navigation?hosting=datacenter&tab=overview">Confluence DC</option>
+          <option value="https://marketplace.atlassian.com/apps/1216711/refined-for-jsm-dc-theme-itsm-hr-helpdesk-service-desks?hosting=datacenter&tab=overview">JSM DC</option>
+          <option value="https://marketplace.atlassian.com/apps/1211136/refined-toolkit-for-confluence-dc?hosting=datacenter&tab=overview">Toolkit DC</option>
+        </select>
+      </label>
+
+    <label class="full">Final URL:
+      <input type="url" id="finalUrl" oninput="updateUtm()">
+    </label>
+
+    <label class="full">Generated UTM:
+      <textarea id="generatedUtm" readonly></textarea>
+    </label>
+
+    <div class="buttons">
+        <button type="button" class="copy-btn" onclick="copyUTM()">📋 Copy UTM</button>
+        <button type="button" class="reset-btn" onclick="resetForm()">🔄 Reset</button>
+        <button type="submit" class="submit-btn">Log UTM ✍️</button>
+      </div>
   </form>
 
-  <script>
-    const channelMap = {
-      "Paid Search (SEM)": { hubspot: "Paid Search", ga4: "Paid Search", atl: "paid-search-non-branded", medium: "cpc", guide: "Campaign: [team]-[app-name]-sem-[objective]-[conversion]-[YYYYMM]\nContent: [adgroup]-[variant]" },
-      "Performance Max": { hubspot: "Paid Search", ga4: "Cross-network", atl: "paid-search-non-branded", medium: "cpc", guide: "Campaign: [team]-[app-name]-pmax-cross-network-[objective]-[YYYYMM]\nContent: [asset-group]-[hook]" },
-      "Demand Generation": { hubspot: "Paid Search", ga4: "Cross-network", atl: "paid-search-non-branded", medium: "cpc", guide: "Campaign: [team]-[app]-dgen-[objective]-[YYYYMM]\nContent: [creative]-[audience]" },
-      "Paid Video Campaigns": { hubspot: "Other Campaigns", ga4: "Paid Video", atl: "paid-video", medium: "cpc", guide: "Campaign: pvid-[app]-[objective]-[YYYYMM]\nContent: [video-title]-[hook]" },
-      "Organic Video": { hubspot: "Other Campaigns", ga4: "Organic Video", atl: "unpaid-video", medium: "video", guide: "Campaign: orgvid-[app]-[topic]-[YYYYMM]\nContent: [channel]-[theme]" },
-      "Organic Social": { hubspot: "Organic Social", ga4: "Organic Social", atl: "unpaid-social", medium: "social", guide: "Campaign: orgsoc-[app]-[topic]-[YYYYMM]\nContent: [platform]-[post-type]" },
-      "Paid Social": { hubspot: "Paid Social", ga4: "Paid Social", atl: "paid-social", medium: "cpc", guide: "Campaign: ps-[app]-[objective]-[YYYYMM]\nContent: [adgroup]-[message]" },
-      "Email Marketing": { hubspot: "Email Marketing", ga4: "Email", atl: "email", medium: "email", guide: "Campaign: em-[type]-[segment]-[YYYYMM]-[day]\nContent: [subject]-[cta]" },
-      "Content Marketing": { hubspot: "Other Campaigns", ga4: "Content Marketing", atl: "content-marketing", medium: "content", guide: "Campaign: cm-[topic]-[YYYYMM]\nContent: [post-title]-[format]" },
-      "Events & Webinars": { hubspot: "Other Campaigns", ga4: "Events and Webinars", atl: "events-and-webinars", medium: "event", guide: "Campaign: event-[name]-[YYYYMM]\nContent: [session]-[speaker]" },
-      "Partner Marketing": { hubspot: "Other Campaigns", ga4: "Partner Marketing", atl: "partner-marketing", medium: "partner", guide: "Campaign: partner-[program]-[YYYYMM]\nContent: [partner-name]-[placement]" },
-      "Display Advertising": { hubspot: "Other Campaigns", ga4: "Display", atl: "paid-display", medium: "display", guide: "Campaign: disp-[team]-[goal]-[YYYYMM]\nContent: [placement]-[adsize]" },
-      "Direct Traffic": { hubspot: "Direct Traffic", ga4: "Direct", atl: "direct", medium: "direct", guide: "Campaign: direct-na\nContent: na" },
-      "Affiliate": { hubspot: "Other Campaigns", ga4: "Affiliates", atl: "paid-affiliate", medium: "affiliate", guide: "Campaign: aff-[program]-[YYYYMM]\nContent: [partner]-[creative]" },
-      "Website Outlinks": { hubspot: "Referral", ga4: "Referral", atl: "refined-website-referral", medium: "referral", guide: "Campaign: outlink-[page]-[section]-[YYYYMM]\nContent: [anchor]-[placement]" }
-    };
+  <div id="toast" class="toast"></div>
 
-    function slugifyInput(id) {
-      const input = document.getElementById(id);
-      input.addEventListener("input", () => {
-        input.value = input.value.replace(/\s+/g, "-");
-        updateUtm();
-      });
+  <script>
+    // Stub google.script.run in non-AppsScript environment
+    if (!window.google) window.google = {};
+    if (!google.script) google.script = {};
+    if (!google.script.run) {
+      google.script.run = {
+        withSuccessHandler: function(s) { this._succ = s; return this; },
+        withFailureHandler: function(f) { this._fail = f; return this; },
+        logUtmData: function(payload) {
+          console.log('Mock logUtmData:', payload);
+          if (this._succ) this._succ();
+        }
+      };
     }
 
-    function updateFields() {
-      const type = document.getElementById("channelType").value;
-      const data = channelMap[type] || {};
-      document.getElementById("hubspotCategory").value = data.hubspot || "";
-      document.getElementById("ga4Category").value = data.ga4 || "";
-      document.getElementById("atlCategory").value = data.atl || "";
-      document.getElementById("utmMedium").value = data.medium || "";
+    // Channel configuration
+    const channelMap = {
+      "Paid Search (SEM)": { hubspot: "Paid Search", ga4: "Paid Search", atl: "paid-search-non-branded", source:"google", medium: "cpc", guide: "Campaign: [team] [app name] sem [objective/segment] [conversion type] [YYYYMM]\nContent: [ad group theme] [ad creative] {keyword} {matchtype}" },
+      "Performance Max": { hubspot: "Paid Search", ga4: "Cross-network", atl: "paid-search-non-branded", source:"google", medium: "cpc", guide: "Campaign: [team] [app name] pmax cross-network [objective/segment] [conversion type] [YYYYMM]\nContent: [ad group theme] [ad creative] {keyword} {matchtype}" },
+      "Demand Generation": { hubspot: "Paid Search", ga4: "Cross-network", atl: "paid-search-non-branded", source:"google", medium: "cpc", guide: "Campaign: [team] [app name] dgen cross-network [objective/segment] [conversion type] [YYYYMM]\nContent: [ad group theme] [ad creative] {placement}" },
+      "Paid Video Campaigns": { hubspot: "Other Campaigns", ga4: "Paid Video", atl: "paid-video", source:"[video platform]", medium: "cpc", guide: "Campaign: [team] [app name] pvid [objective/segment] [conversion type] [YYYYMM]\nContent: [ad group theme] [ad creative] {placement}" },
+      "Organic Video": { hubspot: "Other Campaigns", ga4: "Organic Video", atl: "unpaid-video", source:"[video platform]", medium: "video", guide: "Campaign: orgvid [app name] [content type] [topic] [YYYYMM]\nContent: [format] [profile] [video id]" },
+      "Organic Social": { hubspot: "Organic Social", ga4: "Organic Social", atl: "unpaid-social", source:"[social media platform]", medium: "social", guide: "Campaign: social [app name] [content type] [topic] [YYYYMM]\nContent: [format] [profile] [post id]" },
+      "Paid Social": { hubspot: "Paid Social", ga4: "Paid Social", atl: "paid-social", medium: "cpc", source:"[social media platform]", guide: "Campaign: [team] ps [app name] [campaign objective] [YYYYMM]\nContent: [audience] [ad format] [placement] [creative variant]" },
+      "Email Marketing": { hubspot: "Email Marketing", ga4: "Email", atl: "email", source:"hubspot", medium: "email", guide: "Campaign: email [campaign type] [segment] [YYYYMMDD]\nContent: [email type] [position] [element description]" },
+      "Content Marketing": { hubspot: "Other Campaigns", ga4: "Content Marketing", atl: "content-marketing", source:"[content platform/content piece]", medium: "content", guide: "content [content type] [topic] [YYYYMM]\nContent: [format] [context] [cta]" },
+      "Events & Webinars": { hubspot: "Other Campaigns", ga4: "Events and Webinars", atl: "events-and-webinars", source:"[[event name/event platform]", medium: "event", guide: "Campaign: event [event type] [topic] [YYYYMMDD]\nContent: [material type] [timing] [cta]" },
+      "Partner Marketing": { hubspot: "Other Campaigns", ga4: "Partner Marketing", atl: "partner-marketing", source:"[partner name]", medium: "partner", guide: "Campaign: partner [initiative type] [program] [YYYYMM]\nContent: [asset type] [placement] [element]" },
+      "Display Advertising": { hubspot: "Other Campaigns", ga4: "Display", atl: "paid-display", source:"google", medium: "display", guide: "[team] [app name] [channel] [objective/segment] [conversion type] [YYYYMM]\nContent: [audience name] [ad creative] {placement} {device}" },     
+      "Affiliate": { hubspot: "Other Campaigns", ga4: "Affiliates", atl: "paid-affiliate", source:"[affiliate name]", medium: "affiliate", guide: "Campaign: aff [program type] [incentive] [YYYYMM]\nContent: [placement] [creative type] [identifier]" },
+      "Website Outlinks": { hubspot: "Referral", ga4: "Referral", atl: "refined-website-referral", source:"refined.com", medium: "referral", guide: "Campaign: outlink [link context] [section] [YYYYMM]\nContent: [page name/id] [position] [anchor text]" }
+    };
 
-      const guide = data.guide || "";
-      const lines = guide.split("\n");
-      document.getElementById("utmCampaign").value = lines[0]?.replace("Campaign: ", "") || "";
-      document.getElementById("utmContent").value = lines[1]?.replace("Content: ", "") || "";
-      document.getElementById("guideBox").value = guide;
-
+        // Handle Final URL dropdown selection
+        function chooseUrl() {
+      const url = document.getElementById('urlSelect').value;
+      document.getElementById('finalUrl').value = url;
       updateUtm();
     }
 
-    function updateUtm() {
-      const url = document.getElementById("finalUrl").value.trim();
-      const params = [
-        `utm_source=${document.getElementById("utmSource").value}`,
-        `utm_medium=${document.getElementById("utmMedium").value}`,
-        `utm_campaign=${document.getElementById("utmCampaign").value}`
-      ];
-      const content = document.getElementById("utmContent").value;
-      const term = document.getElementById("utmTerm").value;
-      if (content) params.push(`utm_content=${content}`);
-      if (term) params.push(`utm_term=${term}`);
-      const utm = (url.includes('?') ? url + '&' + params.join('&') : url + '?' + params.join('&')).toLowerCase();
-      document.getElementById("generatedUtm").value = utm;
-    }
-
-    function copyUTM() {
-      const utm = document.getElementById("generatedUtm");
-      utm.select();
-      document.execCommand("copy");
-      alert("🔗 UTM copied to clipboard!");
-    }
-
-    function toggleDarkMode() {
-      document.body.classList.toggle("dark-mode");
-    }
-
-    ["utmSource", "utmCampaign", "utmContent", "utmTerm", "finalUrl"].forEach(id => {
-      slugifyInput(id);
-      document.getElementById(id).addEventListener("input", updateUtm);
+// Init listeners
+    document.addEventListener('DOMContentLoaded', () => {
+    // Set up event listeners
+    document.getElementById('channelType').addEventListener('change', () => {
+        updateFields();
+        updateUtm();
+    });
+    document.getElementById('urlSelect').addEventListener('change', chooseUrl);
+    document.getElementById('createdBy').addEventListener('change', updateUtm);
+    document.getElementById('utmSource').addEventListener('input', updateUtm);
+    document.getElementById('utmMedium').addEventListener('input', updateUtm);
+    document.getElementById('utmCampaign').addEventListener('input', updateUtm);
+    document.getElementById('utmContent').addEventListener('input', updateUtm);
+    document.getElementById('finalUrl').addEventListener('input', updateUtm);
+    
+    // Initialize fields
+    updateFields();
+    updateUtm();
     });
 
-    document.getElementById("utmForm").addEventListener("submit", function (e) {
+    // Populate fields based on channel
+    function updateFields() {
+    const type = document.getElementById('channelType').value;
+    const data = channelMap[type] || {};
+    
+    // Update category fields
+    document.getElementById('hubspotCategory').value = data.hubspot || '';
+    document.getElementById('ga4Category').value = data.ga4 || '';
+    document.getElementById('atlCategory').value = data.atl || '';
+    
+    // Update UTM medium (readonly)
+    document.getElementById('utmMedium').value = data.medium || '';
+    
+    // Update UTM source placeholder and value
+    const utmSourceInput = document.getElementById('utmSource');
+    if (data.source) {
+        utmSourceInput.placeholder = data.source;
+        // Only auto-fill if the field is empty or contains the previous placeholder
+        if (!utmSourceInput.value || utmSourceInput.value === utmSourceInput.placeholder) {
+        utmSourceInput.value = data.source;
+        }
+    } else {
+        utmSourceInput.placeholder = 'e.g., refined.com';
+    }
+    
+    // Update campaign and content (with autofill)
+    const guide = data.guide || '';
+    const lines = guide.split('\n');
+    const campaignTemplate = lines[0]?.split(': ')[1] || '';
+    const contentTemplate = lines[1]?.split(': ')[1] || '';
+
+    const campaignInput = document.getElementById('utmCampaign');
+    campaignInput.value = campaignTemplate; // Restored autofill
+    campaignInput.placeholder = campaignTemplate;
+    document.getElementById('campaignGuide').textContent = 'Campaign template: ' + campaignTemplate;
+
+    const contentInput = document.getElementById('utmContent');
+    contentInput.value = contentTemplate; // Restored autofill
+    contentInput.placeholder = contentTemplate;
+    document.getElementById('contentGuide').textContent = 'Content template: ' + contentTemplate;
+
+    updateUtm();
+    }
+
+    // Build UTM string (convert spaces to dashes)
+    function updateUtm() {
+      const url = document.getElementById('finalUrl').value.trim();
+      const params = [];
+      [['utmSource', 'utm_source'], ['utmMedium', 'utm_medium'], ['utmCampaign', 'utm_campaign'], ['utmContent', 'utm_content'], ['utmTerm', 'utm_term']].forEach(([id, key]) => {
+        const raw = document.getElementById(id).value.trim();
+        const val = raw.replace(/\s+/g, '-');
+        if (val) params.push(`${key}=${val}`);
+      });
+      document.getElementById('generatedUtm').value = url ? (url + (url.includes('?') ? '&' : '?') + params.join('&')).toLowerCase() : '';
+    }
+
+    // Copy to clipboard
+    async function copyUTM() {
+      try { await navigator.clipboard.writeText(document.getElementById('generatedUtm').value); showToast('UTM copied!'); }
+      catch { showToast('Copy failed'); }
+    }
+
+    // Simple toast
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    // Dark mode toggle
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    // Form submission
+    document.getElementById('utmForm').addEventListener('submit', e => {
       e.preventDefault();
       const payload = {
-        createdBy: document.getElementById("createdBy").value,
-        channelType: document.getElementById("channelType").value,
-        hubspotCategory: document.getElementById("hubspotCategory").value,
-        ga4Category: document.getElementById("ga4Category").value,
-        atlCategory: document.getElementById("atlCategory").value,
-        utmSource: document.getElementById("utmSource").value,
-        utmMedium: document.getElementById("utmMedium").value,
-        utmCampaign: document.getElementById("utmCampaign").value,
-        utmContent: document.getElementById("utmContent").value,
-        utmTerm: document.getElementById("utmTerm").value,
-        finalUrl: document.getElementById("finalUrl").value,
-        generatedUtm: document.getElementById("generatedUtm").value
+        createdBy:      document.getElementById('createdBy').value,
+        channelType:    document.getElementById('channelType').value,
+        hubspotCategory:document.getElementById('hubspotCategory').value,
+        ga4Category:    document.getElementById('ga4Category').value,
+        atlCategory:    document.getElementById('atlCategory').value,
+        utmSource:      document.getElementById('utmSource').value,
+        utmMedium:      document.getElementById('utmMedium').value,
+        utmCampaign:    document.getElementById('utmCampaign').value,
+        utmContent:     document.getElementById('utmContent').value,
+        utmTerm:        document.getElementById('utmTerm').value,
+        finalUrl:       document.getElementById('finalUrl').value,
+        generatedUtm:   document.getElementById('generatedUtm').value
       };
-
-      google.script.run
-        .withSuccessHandler(() => {
-          alert("✅ UTM Logged!");
-          document.getElementById("utmForm").reset();
-          document.getElementById("generatedUtm").value = "";
-          document.getElementById("guideBox").value = "";
-        })
-        .withFailureHandler(error => {
-          alert("❌ Error logging UTM: " + error.message);
-        })
-        .logUtmData(payload);
+      google.script.run.withSuccessHandler(() => showToast('✅ Logged'))
+                       .withFailureHandler(() => showToast('❌ Error'))
+                       .logUtmData(payload);
     });
 
-    Object.keys(channelMap).forEach(key => {
-      const opt = document.createElement("option");
-      opt.value = key;
-      opt.textContent = key;
-      document.getElementById("channelType").appendChild(opt);
-    });
+    // Reset form
+    function resetForm() {
+    // Reset select dropdowns
+    document.getElementById('createdBy').value = '';
+    document.getElementById('channelType').value = '';
+    document.getElementById('urlSelect').value = '';
+    
+    // Reset input fields
+    document.getElementById('hubspotCategory').value = '';
+    document.getElementById('ga4Category').value = '';
+    document.getElementById('atlCategory').value = '';
+    document.getElementById('utmSource').value = '';
+    document.getElementById('utmSource').placeholder = 'e.g., refined.com';
+    document.getElementById('utmMedium').value = '';
+    document.getElementById('utmCampaign').value = '';
+    document.getElementById('utmCampaign').placeholder = '';
+    document.getElementById('utmContent').value = '';
+    document.getElementById('utmContent').placeholder = '';
+    document.getElementById('finalUrl').value = '';
+    
+    // Clear generated UTM
+    document.getElementById('generatedUtm').value = '';
+    
+    // Clear guide text
+    document.getElementById('campaignGuide').textContent = '';
+    document.getElementById('contentGuide').textContent = '';
+    
+    // Show confirmation
+    showToast('Form reset!');
+    }
   </script>
 </body>
 </html>
+

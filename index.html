@@ -12,7 +12,7 @@
     form { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
     @media (max-width: 600px) { form { grid-template-columns: 1fr; } }
     label { display: flex; flex-direction: column; }
-    label.full { grid-column: span 2; }
+    form .full { grid-column: span 2; }
     input, select, textarea, button { padding: 8px; border: 1px solid #ccc; border-radius: var(--radius); font-size: 1em; background: inherit; color: inherit; }
     input[readonly], textarea[readonly] { background: #f5f5f5; }
     body.dark-mode input[readonly], body.dark-mode textarea[readonly] { background: #333; }
@@ -24,12 +24,16 @@
     .toast { position: fixed; bottom: 16px; right: 16px; background: var(--primary); color: #fff; padding: var(--gap); border-radius: var(--radius); opacity: 0; transition: opacity 0.3s; }
     #generatedUtm { font-family: monospace; height: 60px; }
     small.guide { font-size: 0.85em; color: #666; margin-top: 4px; display: block; }
+    .toast.show { opacity: 1; box-shadow: 0 4px 12px rgba(0,0,0,0.15);}
+    .toast[data-type="success"] { background: #4CAF50; }
+    .toast[data-type="error"] { background: #F44336; }
+    .toast[data-type="loading"] { background: #FF9800; }
   </style>
 </head>
 <body>
-  <span class="toggle-dark-mode" onclick="toggleDarkMode()">🌓</span>
-  <h2 class="full">UTM Builder Tool</h2>
+  <span class="toggle-dark-mode" onclick="toggleDarkMode()">🌓</span> 
   <form id="utmForm">
+    <h2 class="full">UTM Builder Tool</h2>
     <label>Created By:
       <select id="createdBy">
         <option value="">--Select--</option>
@@ -50,7 +54,6 @@
           <option>Content Marketing</option>
           <option>Events & Webinars</option>
           <option>Partner Marketing</option>
-          <option>Direct Traffic</option>
           <option>Website Outlinks</option>
         </optgroup>
         <optgroup label="Paid Channels">
@@ -153,7 +156,7 @@
       "Paid Social": { hubspot: "Paid Social", ga4: "Paid Social", atl: "paid-social", medium: "cpc", source:"[social media platform]", guide: "Campaign: [team] ps [app name] [campaign objective] [YYYYMM]\nContent: [audience] [ad format] [placement] [creative variant]" },
       "Email Marketing": { hubspot: "Email Marketing", ga4: "Email", atl: "email", source:"hubspot", medium: "email", guide: "Campaign: email [campaign type] [segment] [YYYYMMDD]\nContent: [email type] [position] [element description]" },
       "Content Marketing": { hubspot: "Other Campaigns", ga4: "Content Marketing", atl: "content-marketing", source:"[content platform/content piece]", medium: "content", guide: "content [content type] [topic] [YYYYMM]\nContent: [format] [context] [cta]" },
-      "Events & Webinars": { hubspot: "Other Campaigns", ga4: "Events and Webinars", atl: "events-and-webinars", source:"[[event name/event platform]", medium: "event", guide: "Campaign: event [event type] [topic] [YYYYMMDD]\nContent: [material type] [timing] [cta]" },
+      "Events & Webinars": { hubspot: "Other Campaigns", ga4: "Events and Webinars", atl: "events-and-webinars", source:"[event name/event platform]", medium: "event", guide: "Campaign: event [event type] [topic] [YYYYMMDD]\nContent: [material type] [timing] [cta]" },
       "Partner Marketing": { hubspot: "Other Campaigns", ga4: "Partner Marketing", atl: "partner-marketing", source:"[partner name]", medium: "partner", guide: "Campaign: partner [initiative type] [program] [YYYYMM]\nContent: [asset type] [placement] [element]" },
       "Display Advertising": { hubspot: "Other Campaigns", ga4: "Display", atl: "paid-display", source:"google", medium: "display", guide: "[team] [app name] [channel] [objective/segment] [conversion type] [YYYYMM]\nContent: [audience name] [ad creative] {placement} {device}" },     
       "Affiliate": { hubspot: "Other Campaigns", ga4: "Affiliates", atl: "paid-affiliate", source:"[affiliate name]", medium: "affiliate", guide: "Campaign: aff [program type] [incentive] [YYYYMM]\nContent: [placement] [creative type] [identifier]" },
@@ -174,7 +177,6 @@
         updateFields();
         updateUtm();
     });
-    document.getElementById('urlSelect').addEventListener('change', chooseUrl);
     document.getElementById('createdBy').addEventListener('change', updateUtm);
     document.getElementById('utmSource').addEventListener('input', updateUtm);
     document.getElementById('utmMedium').addEventListener('input', updateUtm);
@@ -219,12 +221,12 @@
     const contentTemplate = lines[1]?.split(': ')[1] || '';
 
     const campaignInput = document.getElementById('utmCampaign');
-    campaignInput.value = campaignTemplate; // Restored autofill
+    if (!campaignInput.value) campaignInput.value = campaignTemplate;
     campaignInput.placeholder = campaignTemplate;
     document.getElementById('campaignGuide').textContent = 'Campaign template: ' + campaignTemplate;
 
     const contentInput = document.getElementById('utmContent');
-    contentInput.value = contentTemplate; // Restored autofill
+    if (!contentInput.value) contentInput.value = contentTemplate;
     contentInput.placeholder = contentTemplate;
     document.getElementById('contentGuide').textContent = 'Content template: ' + contentTemplate;
 
@@ -243,19 +245,34 @@
       document.getElementById('generatedUtm').value = url ? (url + (url.includes('?') ? '&' : '?') + params.join('&')).toLowerCase() : '';
     }
 
+    // Simple toast
+    function showToast(msg, type = '') {
+    console.log('showToast called with:', msg, type);
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.dataset.type = type;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
     // Copy to clipboard
     async function copyUTM() {
       try { await navigator.clipboard.writeText(document.getElementById('generatedUtm').value); showToast('UTM copied!'); }
-      catch { showToast('Copy failed'); }
+      catch {
+        fallbackCopy(document.getElementById('generatedUtm').value);
+        showToast('Copied via fallback');
+        }
     }
 
-    // Simple toast
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 2000);
+    function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
     }
+
 
     // Dark mode toggle
     function toggleDarkMode() {
@@ -264,25 +281,38 @@
 
     // Form submission
     document.getElementById('utmForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const payload = {
-        createdBy:      document.getElementById('createdBy').value,
-        channelType:    document.getElementById('channelType').value,
-        hubspotCategory:document.getElementById('hubspotCategory').value,
-        ga4Category:    document.getElementById('ga4Category').value,
-        atlCategory:    document.getElementById('atlCategory').value,
-        utmSource:      document.getElementById('utmSource').value,
-        utmMedium:      document.getElementById('utmMedium').value,
-        utmCampaign:    document.getElementById('utmCampaign').value,
-        utmContent:     document.getElementById('utmContent').value,
-        utmTerm:        document.getElementById('utmTerm').value,
-        finalUrl:       document.getElementById('finalUrl').value,
-        generatedUtm:   document.getElementById('generatedUtm').value
-      };
-      google.script.run.withSuccessHandler(() => showToast('✅ Logged'))
-                       .withFailureHandler(() => showToast('❌ Error'))
-                       .logUtmData(payload);
-    });
+    e.preventDefault();
+    const payload = {
+      createdBy:      document.getElementById('createdBy').value,
+      channelType:    document.getElementById('channelType').value,
+      hubspotCategory:document.getElementById('hubspotCategory').value,
+      ga4Category:    document.getElementById('ga4Category').value,
+      atlCategory:    document.getElementById('atlCategory').value,
+      utmSource:      document.getElementById('utmSource').value,
+      utmMedium:      document.getElementById('utmMedium').value,
+      utmCampaign:    document.getElementById('utmCampaign').value,
+      utmContent:     document.getElementById('utmContent').value,
+      utmTerm:        document.getElementById('utmTerm').value,
+      finalUrl:       document.getElementById('finalUrl').value,
+      generatedUtm:   document.getElementById('generatedUtm').value
+    };
+
+    showToast('⏳ Logging UTM...', 'loading');
+    
+    google.script.run
+      .withSuccessHandler(() => {
+        showToast('✅ UTM Logged Successfully!');
+        resetForm(); // Optional: Clear form after successful log
+      })
+      .withFailureHandler((error) => {
+        console.error('Logging failed:', error);
+        showToast('❌ Failed to Log: ' + error.message);
+      })
+      .logUtmData(payload);
+    
+  });
+
+    
 
     // Reset form
     function resetForm() {
